@@ -1,0 +1,4 @@
+# Core twoview3d
+numpy
+pandas
+aniposelib
