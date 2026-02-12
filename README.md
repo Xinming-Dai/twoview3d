@@ -9,7 +9,7 @@ twoview3d/
 ├── data/           # Bundle adjustment, calibration
 ├── preprocess/     # Frame extraction, resize-to-match utilities
 ├── model/          # Point cloud and 3D model utilities
-└── E-RayZer/       # Submodule: 3D reconstruction (Gaussian splatting)
+E-RayZer/       # module containing 3D reconstruction (Gaussian splatting)
 ```
 
 ## Getting Started
