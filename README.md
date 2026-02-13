@@ -50,7 +50,7 @@ pip install -e E-RayZer/third_party/gsplat/
 # BUILD_NO_CUDA=1 pip install -e E-RayZer/third_party/gsplat/ # if developing on CPU
 ```
 
-### 3. Run E-RayZer demo (GPU required)
+### 3. If you want to run E-RayZer demo (GPU required)
 
 ```bash
 cd E-RayZer
