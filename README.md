@@ -42,12 +42,14 @@ conda activate project3d
 
 # Install dependencies
 pip install -e E-RayZer/
-pip install -r E-RayZer/requirements.txt
+pip install -r E-RayZer/requirements.txt # GPU requirements
+# pip install -r E-RayZer/requirements-cpu.txt # if developing on CPU
 pip install -e twoview3d/
 pip install -r twoview3d/requirements.txt
 
 # Install gsplat (E-RayZer's Gaussian splatting backend; takes several minutes)
 pip install -e E-RayZer/third_party/gsplat/
+# BUILD_NO_CUDA=1 pip install -e E-RayZer/third_party/gsplat/ # if developing on CPU
 ```
 
 ### 3. Run E-RayZer demo
