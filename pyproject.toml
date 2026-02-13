@@ -1,0 +1,14 @@
+[project]
+name = "twoview3d"
+version = "0.0.1"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[build-system]
+requires = ["setuptools>=64.0", "setuptools-scm"]
+build-backend = "setuptools.build_meta"
+
+
+
+

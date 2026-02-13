@@ -3,22 +3,33 @@
 A two-view 3D reconstruction pipeline that includes [E-RayZer](E-RayZer/) for self-supervised 3D reconstruction from two images.
 
 ## Repository Structure
+Set up the repository structure as follows
 
 ```
-twoview3d/
-├── data/           # Bundle adjustment, calibration
-├── preprocess/     # Frame extraction, resize-to-match utilities
-├── model/          # Point cloud and 3D model utilities
-E-RayZer/       # module containing 3D reconstruction (Gaussian splatting)
+project3d/
+├── twoview3d/
+│   └── src/
+│       └── twoview3d/
+│           ├── data/       # Bundle adjustment, calibration
+│           ├── preprocess/ # Frame extraction, resize-to-match utilities
+│           └── model/      # Point cloud and 3D model utilities
+├── E-RayZer/              # 3D reconstruction (Gaussian splatting)
+└── other_model/           # other 3D models that can be used for comparison
 ```
 
 ## Getting Started
 
-### 1. Clone the repository (with submodules)
+### 1. Fork repositories
+Fork the `twoview3d` and `E-RayZer` repositories to your own GitHub account.
+
+### 2. Clone the repository (with submodules)
 
 ```bash
-git clone --recurse-submodules <your-twoview3d-repo-url>
+cd project3d
 cd twoview3d
+git clone <your-twoview3d-repo-url>
+git clone --recurse-submodules <your-E-RayZer-repo-url>
+cd E-RayZer
 ```
 
 ### 2. Environment setup
@@ -26,12 +37,14 @@ cd twoview3d
 This project uses a single environment for both twoview3d and E-RayZer (Python 3.10 required):
 
 ```bash
-conda create -n twoview3d python=3.10 -y
-conda activate twoview3d
+conda create -n project3d python=3.10 -y
+conda activate project3d
 
 # Install dependencies
-pip install -r requirements.txt
+pip install -e E-RayZer/
 pip install -r E-RayZer/requirements.txt
+pip install -e twoview3d/
+pip install -r twoview3d/requirements.txt
 
 # Install gsplat (E-RayZer's Gaussian splatting backend; takes several minutes)
 pip install -e E-RayZer/third_party/gsplat/
@@ -50,21 +63,3 @@ python gradio_app.py \
 ```
 
 See [E-RayZer/README.md](E-RayZer/README.md) for more details.
-
-## Git: Submodule Workflows
-
-**Update submodule to latest on main:**
-
-```bash
-cd E-RayZer && git pull origin main && cd ..
-```
-
-**Pin submodule to a specific commit (recommended for reproducibility):**
-
-```bash
-cd E-RayZer
-git checkout <commit-hash>
-cd ..
-git add E-RayZer
-git commit -m "Pin E-RayZer to specific commit"
-```
