@@ -1,6 +1,6 @@
 # twoview3d
 
-A two-view 3D reconstruction pipeline that includes [E-RayZer](E-RayZer/) for self-supervised 3D reconstruction from two images.
+A two-view 3D reconstruction pipeline that includes [E-RayZer](E-RayZer/) for self-supervised 3D reconstruction from two views of the same object.
 
 ## Repository Structure
 Set up the repository structure as follows
@@ -20,16 +20,14 @@ project3d/
 ## Getting Started
 
 ### 1. Fork repositories
-Fork the `twoview3d` and `E-RayZer` repositories to your own GitHub account.
+Fork the `twoview3d` (https://github.com/Xinming-Dai/twoview3d) and `E-RayZer`(https://github.com/Xinming-Dai/E-RayZer) repositories to your own GitHub account.
 
 ### 2. Clone the repository (with submodules)
 
 ```bash
 cd project3d
-cd twoview3d
 git clone <your-twoview3d-repo-url>
 git clone --recurse-submodules <your-E-RayZer-repo-url>
-cd E-RayZer
 ```
 
 ### 2. Environment setup
@@ -52,7 +50,7 @@ pip install -e E-RayZer/third_party/gsplat/
 # BUILD_NO_CUDA=1 pip install -e E-RayZer/third_party/gsplat/ # if developing on CPU
 ```
 
-### 3. Run E-RayZer demo
+### 3. Run E-RayZer demo (GPU required)
 
 ```bash
 cd E-RayZer
