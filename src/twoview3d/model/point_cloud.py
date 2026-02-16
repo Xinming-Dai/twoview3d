@@ -9,19 +9,19 @@ from typing import Literal, Union
 
 InputFormat = Literal["rgb", "bgr", "gray"]
 
-def image_to_depth_estimate(
+def depth_map_to_depth_estimate(
     image: Union[str, np.ndarray],
     input_format: InputFormat = "bgr",
 ) -> np.ndarray:
     """
-    Convert an image to a depth map estimate.
+    Convert a depth map image to a depth map estimate. For example, the depth map image can be a video-depth-anything frame.
 
     The depth map is a 2D array of depth values, where each value is the
     distance from the camera center to the surface. Values are normalized
     to [0, 1] using max scaling.
 
     Args:
-        image: Image as file path (str) or array of shape (H, W) or (H, W, 3).
+        image: Depth map image as file path (str) or array of shape (H, W).
         input_format: "rgb", "bgr", or "gray". For rgb/bgr, grayscale is
             computed via Gray = 0.299*R + 0.587*G + 0.114*B.
 
@@ -69,21 +69,29 @@ def pseudo_pointcloud_normalized(depth: np.ndarray) -> np.ndarray:
     return points.reshape(-1, 3)
 
 
-class ImageToPointCloud:
+class DepthMapImageToPointCloud:
     """
-    Build a point cloud from an image file using grayscale as depth estimate.
+    Build a point cloud from a depth map image file using grayscale as depth estimate.
+
+    Args:
+        depth_map_image_path: Path to the depth map image.
+        input_format: "rgb", "bgr", or "gray". For rgb/bgr, grayscale is
+            computed via Gray = 0.299*R + 0.587*G + 0.114*B.
+
+    Returns:
+        DepthMapImageToPointCloud object
     """
 
     def __init__(
         self,
-        image_path: str,
+        depth_map_image_path: str,
         input_format: InputFormat = "bgr",
     ):
-        self.image = cv2.imread(image_path)
-        if self.image is None:
-            raise FileNotFoundError(f"Cannot load image: {image_path}")
+        self.depth_map_image = cv2.imread(depth_map_image_path)
+        if self.depth_map_image is None:
+            raise FileNotFoundError(f"Cannot load image: {depth_map_image_path}")
         self.input_format = input_format
-        self.depth = image_to_depth_estimate(self.image, input_format)
+        self.depth = depth_map_to_depth_estimate(self.depth_map_image, input_format)
         self.pcd = None
 
     def to_pcd(self) -> o3d.geometry.PointCloud:
@@ -110,7 +118,7 @@ class ImageToPointCloud:
         """
         if self.pcd is None:
             self.to_pcd()
-        rgb = cv2.cvtColor(self.image, cv2.COLOR_BGR2RGB)
+        rgb = cv2.cvtColor(self.depth_map_image, cv2.COLOR_BGR2RGB)
         colors = rgb.reshape(-1, 3).astype(np.float32) / 255.0
         pcd = self.pcd
         pcd.colors = o3d.utility.Vector3dVector(colors)
