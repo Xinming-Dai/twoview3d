@@ -2,3 +2,4 @@
 numpy>=1.24.0,<2
 aniposelib>=0.7.2
 open3d>=0.19.0,<0.20
+tomli>=2.0.1

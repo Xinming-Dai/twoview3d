@@ -1,6 +1,9 @@
 [project]
 name = "twoview3d"
 version = "0.0.1"
+dependencies = [
+    "tomli>=2.0",
+]
 
 [tool.setuptools.packages.find]
 where = ["src"]
