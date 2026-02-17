@@ -209,6 +209,7 @@ class DepthMapImageToPointCloud:
         camera_key: str | None = None,
         depth_scale: float = 1.0,
     ):
+        self.depth_map_image_path = depth_map_image_path
         self.depth_map_image = cv2.imread(depth_map_image_path)
         if self.depth_map_image is None:
             raise FileNotFoundError(f"Cannot load image: {depth_map_image_path}")
@@ -269,6 +270,24 @@ class DepthMapImageToPointCloud:
         self.pcd = pcd
         return pcd
 
+    def _image_to_point_colors(self, image: np.ndarray) -> np.ndarray:
+        """
+        Convert a BGR image to point colors for the point cloud.
+
+        Args:
+            image: BGR image of shape (H, W, 3), same size as depth map.
+
+        Returns:
+            colors: Shape (N, 3), float32 in [0, 1], filtered by valid depth
+                if calibration is used.
+        """
+        rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+        colors = rgb.reshape(-1, 3).astype(np.float32) / 255.0
+        if self._cam_params is not None:
+            valid = self.depth.ravel() > 0
+            colors = colors[valid]
+        return colors
+
     def show(self) -> None:
         """
         Display the point cloud with RGB colors from the image.
@@ -278,13 +297,10 @@ class DepthMapImageToPointCloud:
         """
         if self.pcd is None:
             self.to_pcd()
-        rgb = cv2.cvtColor(self.depth_map_image, cv2.COLOR_BGR2RGB)
-        colors = rgb.reshape(-1, 3).astype(np.float32) / 255.0
-        if self._cam_params is not None:
-            valid = self.depth.ravel() > 0
-            colors = colors[valid]
         pcd = self.pcd
-        pcd.colors = o3d.utility.Vector3dVector(colors)
+        pcd.colors = o3d.utility.Vector3dVector(
+            self._image_to_point_colors(self.depth_map_image)
+        )
         o3d.visualization.draw_geometries([pcd])
     
     def show_in_original_color(self, image_path: str) -> None:
@@ -308,11 +324,47 @@ class DepthMapImageToPointCloud:
                 f"Color image shape {color_image.shape[:2]} does not match "
                 f"point cloud depth shape {self.depth.shape}"
             )
-        rgb = cv2.cvtColor(color_image, cv2.COLOR_BGR2RGB)
-        colors = rgb.reshape(-1, 3).astype(np.float32) / 255.0
-        if self._cam_params is not None:
-            valid = self.depth.ravel() > 0
-            colors = colors[valid]
         pcd = self.pcd
-        pcd.colors = o3d.utility.Vector3dVector(colors)
+        pcd.colors = o3d.utility.Vector3dVector(
+            self._image_to_point_colors(color_image)
+        )
         o3d.visualization.draw_geometries([pcd])
+
+    def save_ply(self, color_image_path: str | None = None) -> str:
+        """
+        Save the point cloud to a PLY file.
+
+        The output path is the same as the depth map image path, with the
+        file extension changed to .ply.
+
+        Args:
+            color_image_path: Optional path to a color image for point colors.
+                If provided, must have the same dimensions as the depth map.
+                If None, uses colors from the depth map image.
+
+        Returns:
+            The path where the PLY file was saved.
+        """
+        if self.pcd is None:
+            self.to_pcd()
+        save_path = Path(self.depth_map_image_path).with_suffix(".ply")
+
+        pcd = self.pcd
+        if color_image_path is not None:
+            color_image = cv2.imread(color_image_path)
+            if color_image is None:
+                raise FileNotFoundError(f"Cannot load image: {color_image_path}")
+            if color_image.shape[:2] != self.depth.shape:
+                raise ValueError(
+                    f"Color image shape {color_image.shape[:2]} does not match "
+                    f"point cloud depth shape {self.depth.shape}"
+                )
+            image = color_image
+        else:
+            image = self.depth_map_image
+        pcd.colors = o3d.utility.Vector3dVector(
+            self._image_to_point_colors(image)
+        )
+
+        o3d.io.write_point_cloud(str(save_path), pcd)
+        return str(save_path)
