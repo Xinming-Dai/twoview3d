@@ -11,8 +11,8 @@ Modes:
   - crop:    preserve aspect ratio, center-crop to target WxH (cover)
 
 Examples:
-  python preprocess/resize_to_match.py --input hi.png --reference lo.png
-  python preprocess/resize_to_match.py -i hi.jpg -r lo.jpg --mode crop
+  python src/twoview3d/preprocess/resize_to_match.py --input hi.png --reference lo.png
+  python src/twoview3d/preprocess/resize_to_match.py -i hi.jpg -r lo.jpg --mode crop
 """
 
 from __future__ import annotations

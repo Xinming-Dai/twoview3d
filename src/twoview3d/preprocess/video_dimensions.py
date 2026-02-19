@@ -7,10 +7,10 @@ Backends:
   - opencv: reads via cv2.VideoCapture (fallback)
 
 Examples:
-  python preprocess/video_dimensions.py --input ./videos
-  python preprocess/video_dimensions.py -i ./videos --backend ffprobe
-  python preprocess/video_dimensions.py -i ./videos --summary-only
-  python preprocess/video_dimensions.py -i ./videos --apply-rotation --csv dims.csv --json dims.json
+  python src/twoview3d/preprocess/video_dimensions.py --input ./videos
+  python src/twoview3d/preprocess/video_dimensions.py -i ./videos --backend ffprobe
+  python src/twoview3d/preprocess/video_dimensions.py -i ./videos --summary-only
+  python src/twoview3d/preprocess/video_dimensions.py -i ./videos --apply-rotation --csv dims.csv --json dims.json
 """
 
 from __future__ import annotations

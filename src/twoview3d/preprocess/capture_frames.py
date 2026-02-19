@@ -3,8 +3,8 @@
 Extract a single frame at a specific timestamp from every video under a folder.
 
 Examples:
-  python preprocess/capture_frames.py --input ./videos --timestamp 12.5 --output ./frames
-  python preprocess/capture_frames.py -i ./videos -t 00:01:23.200 -o ./frames --mirror
+  python src/twoview3d/preprocess/capture_frames.py --input ./videos --timestamp 12.5 --output ./frames
+  python src/twoview3d/preprocess/capture_frames.py -i ./videos -t 00:01:23.200 -o ./frames --mirror
 """
 
 from __future__ import annotations

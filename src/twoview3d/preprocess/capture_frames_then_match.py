@@ -8,8 +8,8 @@ Pipeline utility:
 This is a convenience wrapper so you can run a single command.
 
 Examples:
-  python preprocess/capture_frames_then_match.py -i ./videos -t 12.5 -o ./frames
-  python preprocess/capture_frames_then_match.py -i ./videos -t 00:01:23.200 -o ./frames --mode crop
+  python src/twoview3d/preprocess/capture_frames_then_match.py -i ./videos -t 12.5 -o ./frames
+  python src/twoview3d/preprocess/capture_frames_then_match.py -i ./videos -t 00:01:23.200 -o ./frames --mode crop
 
 Notes:
   - The input folder must contain exactly 2 videos (recursively). Otherwise this script errors out.

@@ -3,9 +3,9 @@
 Examine (width, height) of image files under a folder.
 
 Examples:
-  python preprocess/image_dimensions.py --input ./images
-  python preprocess/image_dimensions.py -i ./images --no-recursive --summary-only
-  python preprocess/image_dimensions.py -i ./images --apply-exif-orientation --csv dims.csv
+  python src/twoview3d/preprocess/image_dimensions.py --input ./images
+  python src/twoview3d/preprocess/image_dimensions.py -i ./images --no-recursive --summary-only
+  python src/twoview3d/preprocess/image_dimensions.py -i ./images --apply-exif-orientation --csv dims.csv
 """
 
 from __future__ import annotations
