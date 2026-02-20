@@ -1,32 +1,40 @@
 import twoview3d.model.point_cloud as point_cloud
+import open3d as o3d
 import os
 
+folder_path = "./twoview3d/test/frames/" + "4b00df29-3769-43be-bb40-128b1cba6d35"
+calibration_path = "./twoview3d/src/twoview3d/bundle_adjust/_iblrig.downsampled.4b00df29-3769-43be-bb40-128b1cba6d35.toml"
 
-folder_path = "./twoview3d/test/frames"
-image_path = os.path.join(folder_path, "_iblrig_leftCamera.downsampled.ecb5520d-1358-434c-95ec-93687ecd1396_vis_t17p0.jpg")
-original_image_path = os.path.join(folder_path, "_iblrig_leftCamera.downsampled.ecb5520d-1358-434c-95ec-93687ecd1396_src_t17p0.jpg")
+right_vis = os.path.join(folder_path, "_iblrig_rightCamera.downsampled.4b00df29-3769-43be-bb40-128b1cba6d35_vis_t20.jpg")
+right_src = os.path.join(folder_path, "_iblrig_rightCamera.downsampled.4b00df29-3769-43be-bb40-128b1cba6d35_src_t20.jpg")
+pcd_builder_right = point_cloud.DepthMapImageToPointCloud(
+    right_vis,
+    calibration_path=calibration_path,
+    camera_key="rightCamera",
+    depth_scale=5.0,
+)
 
-pc = point_cloud.DepthMapImageToPointCloud(image_path, input_format="bgr")
-pc.show_in_original_color(original_image_path)
-ply_path = pc.save_ply()
-print(f"Point cloud saved to {ply_path}")
+left_vis = os.path.join(
+    folder_path,
+    "_iblrig_leftCamera.downsampled.4b00df29-3769-43be-bb40-128b1cba6d35_vis_t20__matched_320x256_stretch__ref-_iblrig_rightCamera.downsampled.4b00df29-3769-43be-bb40-128b1cba6d35_src_t20.jpg",
+)
+left_src = os.path.join(
+    folder_path,
+    "_iblrig_leftCamera.downsampled.4b00df29-3769-43be-bb40-128b1cba6d35_src_t20__matched_320x256_stretch__ref-_iblrig_rightCamera.downsampled.4b00df29-3769-43be-bb40-128b1cba6d35_src_t20.jpg",
+)
+pcd_builder_left = point_cloud.DepthMapImageToPointCloud(
+    left_vis,
+    calibration_path=calibration_path,
+    camera_key="leftCamera",
+    depth_scale=5.0,
+)
 
+pcd_merged = point_cloud.register_two_point_clouds(
+    pcd_builder_right,
+    pcd_builder_left,
+    calibration_path,
+    color_path_1=right_src,
+    color_path_2=left_src,
+)
 
-
-# pcd_builder_right = point_cloud.DepthMapImageToPointCloud(
-#     "./twoview3d/test/frames/_iblrig_rightCamera.downsampled.ecb5520d-1358-434c-95ec-93687ecd1396_vis_t17p0.jpg",
-#     calibration_path="./twoview3d/src/twoview3d/data/calibration.toml",
-#     camera_key="rightCamera",  # or "rightCamera"
-#     depth_scale=5.0,     # if depth is [0,1], scale to meters
-# )
-# pcd = pcd_builder_right.to_pcd()
-# pcd_builder_right.show_in_original_color(original_image_path)
-
-# pcd_builder_left = point_cloud.DepthMapImageToPointCloud(
-#     "./twoview3d/test/frames/_iblrig_leftCamera.downsampled.ecb5520d-1358-434c-95ec-93687ecd1396_vis_t17p0.jpg",
-#     calibration_path="./twoview3d/src/twoview3d/data/calibration.toml",
-#     camera_key="leftCamera",  # or "rightCamera"
-#     depth_scale=5.0,     # if depth is [0,1], scale to meters
-# )
-# pcd = pcd_builder_left.to_pcd()
-# pcd_builder_left.show()
+o3d.visualization.draw_geometries([pcd_merged])
