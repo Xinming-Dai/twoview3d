@@ -368,3 +368,81 @@ class DepthMapImageToPointCloud:
 
         o3d.io.write_point_cloud(str(save_path), pcd)
         return str(save_path)
+
+
+def register_two_point_clouds(
+    builder_1: DepthMapImageToPointCloud,
+    builder_2: DepthMapImageToPointCloud,
+    calibration_path: Union[str, Path],
+    color_path_1: str | None = None,
+    color_path_2: str | None = None,
+) -> o3d.geometry.PointCloud:
+    """
+    Register (merge) two point clouds into a single point cloud in world frame.
+
+    Both builders must have been created with the given calibration_path and
+    their respective camera_key. Points are transformed to world coordinates
+    via calibration R,t (camera→world), then concatenated.
+
+    Args:
+        builder_1: First DepthMapImageToPointCloud (e.g. right camera).
+        builder_2: Second DepthMapImageToPointCloud (e.g. left camera).
+        calibration_path: Path to calibration TOML. Required; both builders
+            should use this calibration.
+        color_path_1: Optional path to color image for builder_1. If None,
+            uses the depth map image for colors.
+        color_path_2: Optional path to color image for builder_2. If None,
+            uses the depth map image for colors.
+
+    Returns:
+        Merged o3d.geometry.PointCloud in world frame with colors.
+    """
+    path = Path(calibration_path)
+    if not path.exists():
+        raise FileNotFoundError(f"Calibration not found: {calibration_path}")
+
+    if builder_1._cam_params is None or builder_2._cam_params is None:
+        raise ValueError(
+            "Both builders must be created with calibration_path and camera_key. "
+            "Use DepthMapImageToPointCloud(..., calibration_path=..., camera_key=...)"
+        )
+
+    pcd_1 = builder_1.to_pcd()
+    pcd_2 = builder_2.to_pcd()
+
+    img_1 = (
+        cv2.imread(color_path_1)
+        if color_path_1 is not None
+        else builder_1.depth_map_image
+    )
+    img_2 = (
+        cv2.imread(color_path_2)
+        if color_path_2 is not None
+        else builder_2.depth_map_image
+    )
+    if img_1 is None and color_path_1 is not None:
+        raise FileNotFoundError(f"Cannot load color image: {color_path_1}")
+    if img_2 is None and color_path_2 is not None:
+        raise FileNotFoundError(f"Cannot load color image: {color_path_2}")
+
+    pcd_1.colors = o3d.utility.Vector3dVector(
+        builder_1._image_to_point_colors(img_1)
+    )
+    pcd_2.colors = o3d.utility.Vector3dVector(
+        builder_2._image_to_point_colors(img_2)
+    )
+
+    merged = o3d.geometry.PointCloud()
+    merged.points = o3d.utility.Vector3dVector(
+        np.vstack([
+            np.asarray(pcd_1.points),
+            np.asarray(pcd_2.points),
+        ])
+    )
+    merged.colors = o3d.utility.Vector3dVector(
+        np.vstack([
+            np.asarray(pcd_1.colors),
+            np.asarray(pcd_2.colors),
+        ])
+    )
+    return merged
