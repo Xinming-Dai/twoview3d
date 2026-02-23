@@ -4,7 +4,7 @@ Manually select 5–10 point correspondences between two point clouds for ICP.
 Use this as step 1 of the pipeline:
   1. Manually select correspondences (this script)
   2. Estimate initial transform (SVD / Kabsch)
-  3. Refine with ICP
+  3. Refine with ICP using point_cloud_registration_with_correspondences.py
 
 Usage:
   python select_correspondences.py [--source SOURCE.ply] [--target TARGET.ply] \\
