@@ -1,20 +1,20 @@
 """
-Manually select 5–10 point correspondences between two point clouds for ICP.
+Manually select 5–10 point keypoints between two point clouds for ICP.
 
 Use this as step 1 of the pipeline:
-  1. Manually select correspondences (this script)
+  1. Manually select keypoints (this script)
   2. Estimate initial transform (SVD / Kabsch)
-  3. Refine with ICP using point_cloud_registration_with_correspondences.py
+  3. Refine with ICP using point_cloud_registration_with_keypoints.py
 
 Usage:
-  python select_correspondences.py [--source SOURCE.ply] [--target TARGET.ply] \\
-      [--output correspondences.npz] [--source-color R G B] [--target-color R G B]
+  python select_keypoints.py [--source SOURCE.ply] [--target TARGET.ply] \\
+      [--output keypoints.npz] [--source-color R G B] [--target-color R G B]
 
   To use colors already stored in the PLY files:
-  python select_correspondences.py --source a.ply --target b.ply --use-ply-colors
+  python select_keypoints.py --source a.ply --target b.ply --use-ply-colors
 
   To color from images (requires calibration):
-  python select_correspondences.py --source a.ply --target b.ply \\
+  python select_keypoints.py --source a.ply --target b.ply \\
       --source-image left.jpg --target-image right.jpg \\
       --calibration calib.toml --source-cam cam_0 --target-cam cam_1
 
@@ -183,7 +183,7 @@ def build_side_by_side_cloud(
     return combined_pcd, n_source, target_offset_x
 
 
-def pick_correspondences_side_by_side(
+def pick_keypoints_side_by_side(
     combined_pcd: o3d.geometry.PointCloud,
     n_source: int,
     source_pcd: o3d.geometry.PointCloud,
@@ -193,7 +193,7 @@ def pick_correspondences_side_by_side(
     max_points: int = 10,
 ) -> tuple[np.ndarray, np.ndarray, list[int], list[int]]:
     """
-    Show combined (side-by-side) point cloud; user picks on left then right. Returns correspondences.
+    Show combined (side-by-side) point cloud; user picks on left then right. Returns keypoints.
 
     Picked indices < n_source are source; >= n_source are target (stored in pick order).
     Returns original (un-offset) 3D coordinates for both.
@@ -236,7 +236,7 @@ def pick_correspondences_side_by_side(
     return source_points, target_points, source_pick_indices, target_pick_indices
 
 
-def save_correspondences(
+def save_keypoints(
     source_points: np.ndarray,
     target_points: np.ndarray,
     source_indices: list[int],
@@ -253,12 +253,12 @@ def save_correspondences(
         source_indices=np.array(source_indices),
         target_indices=np.array(target_indices),
     )
-    print(f"Saved {len(source_points)} correspondences to {path}")
+    print(f"Saved {len(source_points)} keypoints to {path}")
 
 
 def main() -> None:
     parser = argparse.ArgumentParser(
-        description="Manually select point correspondences between two point clouds for ICP."
+        description="Manually select point keypoints between two point clouds for ICP."
     )
     parser.add_argument(
         "--source",
@@ -275,20 +275,20 @@ def main() -> None:
     parser.add_argument(
         "--output",
         type=Path,
-        default=Path("correspondences.npz"),
-        help="Output path for correspondences (.npz). Default: correspondences.npz",
+        default=Path("keypoints.npz"),
+        help="Output path for keypoints (.npz). Default: keypoints.npz",
     )
     parser.add_argument(
         "--min-points",
         type=int,
         default=5,
-        help="Minimum number of correspondences (default: 5).",
+        help="Minimum number of keypoints (default: 5).",
     )
     parser.add_argument(
         "--max-points",
         type=int,
         default=10,
-        help="Maximum number of correspondences (default: 10).",
+        help="Maximum number of keypoints (default: 10).",
     )
     parser.add_argument(
         "--source-color",
@@ -407,19 +407,19 @@ def main() -> None:
         source_pcd, target_pcd, source_color, target_color
     )
 
-    source_points, target_points, source_indices, target_indices = pick_correspondences_side_by_side(
+    source_points, target_points, source_indices, target_indices = pick_keypoints_side_by_side(
         combined_pcd,
         n_source,
         source_pcd,
         target_pcd,
-        "Source (left) & Target (right) — pick correspondences",
+        "Source (left) & Target (right) — pick keypoints",
         min_points=args.min_points,
         max_points=args.max_points,
     )
     n_corr = len(source_points)
-    print(f"Picked {n_corr} correspondences.")
+    print(f"Picked {n_corr} keypoints.")
 
-    save_correspondences(
+    save_keypoints(
         source_points,
         target_points,
         source_indices,
