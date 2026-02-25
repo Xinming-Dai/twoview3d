@@ -328,6 +328,7 @@ class DepthMapImageToPointCloud:
             self._depth_scale = depth_scale
         else:
             self._depth_scale = 1.0
+        self.remove_background_has_been_used = False
 
     def interactive_pick_threshold(self) -> float | None:
         """
@@ -358,6 +359,7 @@ class DepthMapImageToPointCloud:
             self.depth_map_image, threshold, input_format=self.input_format
         )
         self.pcd = None
+        self.remove_background_has_been_used = True
 
     def to_pcd(self) -> o3d.geometry.PointCloud:
         """
@@ -463,7 +465,11 @@ class DepthMapImageToPointCloud:
         """
         if self.pcd is None:
             self.to_pcd()
-        save_path = Path(self.depth_map_image_path).with_suffix(".ply")
+        p = Path(self.depth_map_image_path)
+        if self.remove_background_has_been_used:
+            save_path = p.parent / (p.stem + "_removed_background.ply")
+        else:
+            save_path = p.with_suffix(".ply")
 
         pcd = self.pcd
         if color_image_path is not None:
