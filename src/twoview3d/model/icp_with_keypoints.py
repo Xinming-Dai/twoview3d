@@ -13,7 +13,7 @@ from pathlib import Path
 import numpy as np
 import open3d as o3d
 
-from twoview3d.model.point_cloud_registration import (
+from twoview3d.model.icp import (
     draw_registration_result,
     evaluate_registration,
     load_point_clouds,
