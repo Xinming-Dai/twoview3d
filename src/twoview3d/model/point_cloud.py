@@ -127,7 +127,7 @@ def interactive_depth_picker(
     display_image: np.ndarray | None = None,
 ) -> float | None:
     """
-    Display a depth map and let the user click to get the depth value at that pixel.
+    Display a depth map and let the user click to get the depth value at that pixel. Depth Picker - click to get depth value, press any key to close.
 
     Args:
         image: Depth map image as file path (str) or array. Passed to
@@ -251,20 +251,22 @@ def pseudo_pointcloud_normalized(depth: np.ndarray) -> np.ndarray:
 
     The origin is the center of the image; X and Y range is [-0.5, 0.5].
     Z is the depth value. Y is flipped to align with 3D convention.
+    Points with depth <= 0 are excluded (e.g. background).
 
     Args:
         depth: Shape (H, W), depth values per pixel.
 
     Returns:
-        points: Shape (H*W, 3), each row is (x, y, z).
+        points: Shape (N, 3), each row is (x, y, z). N = H * W if depth is not filtered, otherwise N = number of valid pixels.
     """
     H, W = depth.shape
     u, v = np.meshgrid(np.arange(W), np.arange(H))
     X = (u - W / 2) / W
     Y = (v - H / 2) / H
     Z = depth
-    points = np.stack([X, -Y, Z], axis=-1)
-    return points.reshape(-1, 3)
+    points = np.stack([X, -Y, Z], axis=-1).reshape(-1, 3)
+    valid = depth.ravel() > 0
+    return points[valid]
 
 
 class DepthMapImageToPointCloud:
@@ -327,11 +329,26 @@ class DepthMapImageToPointCloud:
         else:
             self._depth_scale = 1.0
 
+    def interactive_pick_threshold(self) -> float | None:
+        """
+        Open an interactive window to click on the depth image and get the depth value. Depth Picker - click to get depth value, press any key to close.
+
+        Delegates to interactive_depth_picker using this builder's image.
+
+        Returns:
+            The depth value at the clicked pixel, or None if the window was closed
+            without a click.
+        """
+        return interactive_depth_picker(
+            self.depth_map_image_path,
+            input_format=self.input_format,
+        )
+
     def remove_background(self, threshold: float) -> None:
         """
         Remove background by zeroing depth where depth <= threshold.
 
-        Call this after using interactive_depth_picker to get a threshold.
+        Call this after interactive_pick_threshold() to get a threshold.
         Invalidates the cached point cloud; to_pcd() will rebuild with filtered depth.
 
         Args:
@@ -380,14 +397,12 @@ class DepthMapImageToPointCloud:
 
         Returns:
             colors: Shape (N, 3), float32 in [0, 1], filtered by valid depth
-                if calibration is used.
+                (depth > 0) to match the point cloud.
         """
         rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
         colors = rgb.reshape(-1, 3).astype(np.float32) / 255.0
-        if self._cam_params is not None:
-            valid = self.depth.ravel() > 0
-            colors = colors[valid]
-        return colors
+        valid = self.depth.ravel() > 0
+        return colors[valid]
 
     def show(self) -> None:
         """
