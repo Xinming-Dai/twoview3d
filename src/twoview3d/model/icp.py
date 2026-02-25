@@ -5,9 +5,10 @@ from typing import Union
 import numpy as np
 import open3d as o3d
 
-# Paths to source and target point clouds
-SOURCE_PLY = Path(__file__).parent / "frames" / "_iblrig_rightCamera.downsampled.ecb5520d-1358-434c-95ec-93687ecd1396_vis_t17p0.ply"
-TARGET_PLY = Path(__file__).parent / "frames" / "_iblrig_leftCamera.downsampled.ecb5520d-1358-434c-95ec-93687ecd1396_vis_t17p0.ply"
+# Paths to source and target point clouds (test/frames/<frame_id>/)
+_FRAMES_DIR = Path(__file__).parent.parent.parent.parent / "test" / "frames" / "ecb5520d-1358-434c-95ec-93687ecd1396"
+SOURCE_PLY = _FRAMES_DIR / "_iblrig_rightCamera.downsampled.ecb5520d-1358-434c-95ec-93687ecd1396_vis_t17p0_removed_background.ply"
+TARGET_PLY = _FRAMES_DIR / "_iblrig_leftCamera.downsampled.ecb5520d-1358-434c-95ec-93687ecd1396_vis_t17p0_removed_background.ply"
 
 
 def draw_registration_result(source: o3d.geometry.PointCloud, target: o3d.geometry.PointCloud, transformation: np.ndarray) -> None:
@@ -67,10 +68,20 @@ def run_point_to_plane_icp(
 def load_point_clouds(
     source_path: Union[Path, str],
     target_path: Union[Path, str],
-) -> tuple:
+) -> tuple[o3d.geometry.PointCloud, o3d.geometry.PointCloud]:
     """Load source and target point clouds from PLY files."""
     source = o3d.io.read_point_cloud(str(source_path))
     target = o3d.io.read_point_cloud(str(target_path))
+    if len(np.asarray(source.points)) == 0:
+        raise FileNotFoundError(
+            f"Failed to load source point cloud from {source_path}. "
+            "Check that the file exists and is a valid PLY."
+        )
+    if len(np.asarray(target.points)) == 0:
+        raise FileNotFoundError(
+            f"Failed to load target point cloud from {target_path}. "
+            "Check that the file exists and is a valid PLY."
+        )
     return source, target
 
 
@@ -102,10 +113,15 @@ def main() -> None:
     print("Evaluation after P2P:", evaluation_p2p)
 
     # Point-to-plane ICP (requires normals - estimate if missing)
+    # Depth-derived point clouds typically have no normals; estimate from neighbors
     if not source.has_normals():
-        source.estimate_normals()
+        source.estimate_normals(
+            search_param=o3d.geometry.KDTreeSearchParamHybrid(radius=0.1, max_nn=30)
+        )
     if not target.has_normals():
-        target.estimate_normals()
+        target.estimate_normals(
+            search_param=o3d.geometry.KDTreeSearchParamHybrid(radius=0.1, max_nn=30)
+        )
 
     print("\n--- Point-to-plane ICP ---")
     reg_p2plane = run_point_to_plane_icp(source, target, reg_p2p.transformation, threshold)
