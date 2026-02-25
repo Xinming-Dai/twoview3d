@@ -121,6 +121,92 @@ def depth_to_pointcloud_calibrated(
 
     return points.astype(np.float32)
 
+def interactive_depth_picker(
+    image: Union[str, np.ndarray],
+    input_format: InputFormat = "bgr",
+    display_image: np.ndarray | None = None,
+) -> float | None:
+    """
+    Display a depth map and let the user click to get the depth value at that pixel.
+
+    Args:
+        image: Depth map image as file path (str) or array. Passed to
+            depth_map_to_depth_estimate to obtain depth values.
+        input_format: "rgb", "bgr", or "gray". For rgb/bgr, grayscale is
+            computed via Gray = 0.299*R + 0.587*G + 0.114*B.
+        display_image: Optional image to display. If None, uses a colormap
+            visualization of the depth (darker = larger depth).
+
+    Returns:
+        The depth value at the clicked pixel, or None if the window was closed
+        without a click.
+
+    Example:
+        >>> threshold = interactive_depth_picker("depth.png")
+        >>> if threshold is not None:
+        ...     depth_fg = remove_background_by_depth("depth.png", threshold)
+    """
+    depth = depth_map_to_depth_estimate(image, input_format)
+    if display_image is None:
+        # Normalize depth to [0, 255] for display (darker = larger depth)
+        vis = (depth * 255).astype(np.uint8)
+        vis = cv2.applyColorMap(255 - vis, cv2.COLORMAP_VIRIDIS)
+    else:
+        vis = display_image.copy()
+        if vis.ndim == 2:
+            vis = cv2.cvtColor(vis, cv2.COLOR_GRAY2BGR)
+
+    result = {"depth_value": None, "done": False}
+
+    def on_mouse(event: int, x: int, y: int, *_args: object) -> None:
+        if event != cv2.EVENT_LBUTTONDOWN:
+            return
+        h, w = depth.shape
+        if 0 <= x < w and 0 <= y < h:
+            result["depth_value"] = float(depth[y, x])
+            result["done"] = True
+
+    cv2.namedWindow("Depth Picker - click to get depth value, press any key to close")
+    cv2.setMouseCallback("Depth Picker - click to get depth value, press any key to close", on_mouse)
+    cv2.imshow("Depth Picker - click to get depth value, press any key to close", vis)
+    cv2.waitKey(0)
+    cv2.destroyAllWindows()
+    return result["depth_value"]
+
+
+def remove_background_by_depth(
+    image: Union[str, np.ndarray],
+    threshold: float,
+    input_format: InputFormat = "bgr",
+    background_value: float = 0.0,
+) -> np.ndarray:
+    """
+    Remove background by zeroing out pixels with depth <= threshold.
+
+    Background pixels (depth <= threshold) are set to background_value so they
+    are excluded when building point clouds (e.g. depth_to_pointcloud_calibrated
+    filters out points with depth <= 0).
+
+    Args:
+        image: Depth map image as file path (str) or array. Passed to
+            depth_map_to_depth_estimate to obtain depth values.
+        threshold: Depth threshold. Pixels with depth <= threshold are treated
+            as background.
+        input_format: "rgb", "bgr", or "gray". For rgb/bgr, grayscale is
+            computed via Gray = 0.299*R + 0.587*G + 0.114*B.
+        background_value: Value to assign to background pixels. Default 0.0
+            ensures they are filtered out by depth > 0 checks.
+
+    Returns:
+        depth_fg: Copy of depth with background removed (background_value where
+            depth <= threshold).
+    """
+    depth = depth_map_to_depth_estimate(image, input_format)
+    depth_fg = depth.astype(np.float32, copy=True)
+    depth_fg[depth <= threshold] = background_value
+    return depth_fg
+
+
 def depth_map_to_depth_estimate(
     image: Union[str, np.ndarray],
     input_format: InputFormat = "bgr",
@@ -240,6 +326,21 @@ class DepthMapImageToPointCloud:
             self._depth_scale = depth_scale
         else:
             self._depth_scale = 1.0
+
+    def remove_background(self, threshold: float) -> None:
+        """
+        Remove background by zeroing depth where depth <= threshold.
+
+        Call this after using interactive_depth_picker to get a threshold.
+        Invalidates the cached point cloud; to_pcd() will rebuild with filtered depth.
+
+        Args:
+            threshold: Depth threshold. Pixels with depth <= threshold are removed.
+        """
+        self.depth = remove_background_by_depth(
+            self.depth_map_image, threshold, input_format=self.input_format
+        )
+        self.pcd = None
 
     def to_pcd(self) -> o3d.geometry.PointCloud:
         """
