@@ -4,7 +4,7 @@ Kabsch + ICP pipeline for point cloud registration.
 run select_correspondences.py first to interactively pick and save landmark correspondences, then run this script to compute the transform.
 
 Usage:  
-    python keypoint.py --source path/to/source.ply --target path/to/target.ply --correspondences path/to/correspondences.npz --output path/to/transform.npy
+    python icp_with_keypoints.py --source path/to/source.ply --target path/to/target.ply --correspondences path/to/correspondences.npz --output path/to/transform.npy
 
 """ 
 
