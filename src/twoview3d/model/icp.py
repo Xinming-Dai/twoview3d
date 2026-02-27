@@ -11,12 +11,25 @@ SOURCE_PLY = _FRAMES_DIR / "_iblrig_rightCamera.downsampled.ecb5520d-1358-434c-9
 TARGET_PLY = _FRAMES_DIR / "_iblrig_leftCamera.downsampled.ecb5520d-1358-434c-95ec-93687ecd1396_vis_t17p0_removed_background.ply"
 
 
-def draw_registration_result(source: o3d.geometry.PointCloud, target: o3d.geometry.PointCloud, transformation: np.ndarray) -> None:
-    """Visualize registration result: source (orange) and target (blue) after applying transformation."""
+def draw_registration_result(
+    source: o3d.geometry.PointCloud,
+    target: o3d.geometry.PointCloud,
+    transformation: np.ndarray,
+    use_original_colors: bool = True,
+) -> None:
+    """Visualize registration result after applying transformation.
+
+    Parameters
+    ----------
+    use_original_colors : bool
+        If True, preserve original point cloud colors. If False, paint source
+        orange and target blue for clearer distinction.
+    """
     source_temp = copy.deepcopy(source)
     target_temp = copy.deepcopy(target)
-    source_temp.paint_uniform_color([1, 0.706, 0])
-    target_temp.paint_uniform_color([0, 0.651, 0.929])
+    if not use_original_colors:
+        source_temp.paint_uniform_color([1, 0.706, 0])
+        target_temp.paint_uniform_color([0, 0.651, 0.929])
     source_temp.transform(transformation)
     o3d.visualization.draw_plotly([source_temp, target_temp])
 
